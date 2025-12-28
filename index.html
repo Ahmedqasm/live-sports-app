@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق البث المباشر</title>
+    <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
+    <style>
+        body { background: #0b141a; color: white; font-family: sans-serif; margin: 0; text-align: center; }
+        .player-container { position: sticky; top: 0; z-index: 1000; background: #000; width: 100%; aspect-ratio: 16/9; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; padding: 20px; }
+        .ch-btn { background: #238636; color: white; border: none; padding: 15px 5px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px; height: 60px; }
+        .ch-btn:hover { background: #2ea043; }
+        h2 { font-size: 18px; margin-top: 20px; color: #00d1b2; }
+    </style>
+</head>
+<body>
+
+<div class="player-container">
+    <video id="main-player" class="video-js vjs-default-skin vjs-16-9 vjs-big-play-centered" controls preload="auto" width="100%"></video>
+</div>
+
+<h2>📺 قائمة القنوات الرياضية</h2>
+
+<div class="grid">
+    <button class="ch-btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/1.m3u8')">beIN Sports 1</button>
+    <button class="ch-btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/2.m3u8')">beIN Sports 2</button>
+    <button class="ch-btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/3.m3u8')">beIN Sports 3</button>
+    <button class="ch-btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/10.m3u8')">SSC 1</button>
+    <button class="ch-btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/11.m3u8')">SSC 2</button>
+</div>
+
+<script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
+<script>
+    // تهيئة المشغل
+    const player = videojs('main-player');
+
+    function play(url) {
+        player.src({
+            src: url,
+            type: 'application/x-mpegURL'
+        });
+        player.play();
+        // العودة للأعلى لمشاهدة الفيديو عند الضغط على القناة
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+</script>
+</body>
+</html>
