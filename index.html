@@ -3,34 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشغل القنوات</title>
+    <title>البث المباشر - النسخة الشاملة</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
-        body { background: #000; color: white; text-align: center; font-family: sans-serif; }
-        .grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 20px; }
-        .btn { background: #28a745; color: white; border: none; padding: 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .vjs-default-skin { margin: 0 auto; }
+        body { background: #0b141a; color: white; font-family: sans-serif; margin: 0; text-align: center; }
+        .player-box { position: sticky; top: 0; z-index: 1000; background: #000; width: 100%; aspect-ratio: 16/9; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding: 20px; }
+        .btn { background: #238636; color: white; border: none; padding: 12px 5px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; height: 50px; transition: 0.2s; }
+        .btn:active { transform: scale(0.9); background: #2ea043; }
+        .title { padding: 10px; background: #1c2128; font-size: 16px; border-bottom: 2px solid #238636; }
     </style>
 </head>
 <body>
 
-    <h2>اختر قناة لتشغيلها:</h2>
-    
-    <div class="grid">
-        <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/1.m3u8')">beIN Sports 1</button>
-        <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/2.m3u8')">beIN Sports 2</button>
-        <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/10.m3u8')">SSC 1</button>
-    </div>
+<div class="player-box">
+    <video id="tv" class="video-js vjs-default-skin vjs-16-9 vjs-big-play-centered" controls preload="auto" width="100%"></video>
+</div>
 
-    <video id="vid" class="video-js vjs-default-skin vjs-16-9" controls preload="auto" width="300"></video>
+<div class="title">🏆 القنوات الرياضية المباشرة</div>
 
-    <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
-    <script>
-        var player = videojs('vid');
-        function play(url) {
-            player.src({ src: url, type: 'application/x-mpegURL' });
-            player.play();
-        }
-    </script>
+<div class="grid">
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/1.m3u8')">beIN 1</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/2.m3u8')">beIN 2</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/3.m3u8')">beIN 3</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/4.m3u8')">beIN 4</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/5.m3u8')">beIN 5</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/6.m3u8')">beIN 6</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/7.m3u8')">beIN 7</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/8.m3u8')">beIN 8</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/9.m3u8')">beIN 9</button>
+
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/10.m3u8')">SSC 1</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/11.m3u8')">SSC 2</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/12.m3u8')">SSC 3</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/13.m3u8')">SSC 4</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/14.m3u8')">SSC 5</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/15.m3u8')">SSC NEWS</button>
+
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/20.m3u8')">AD 1</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/21.m3u8')">AD 2</button>
+    <button class="btn" onclick="play('http://xapi-ie.org:8080/joker10/joker1995/30.m3u8')">المغربية 📺</button>
+</div>
+
+<script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
+<script>
+    var p = videojs('tv');
+    function play(u) {
+        p.src({ src: u, type: 'application/x-mpegURL' });
+        p.play();
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+</script>
 </body>
 </html>
