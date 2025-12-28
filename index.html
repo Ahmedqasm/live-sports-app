@@ -1,44 +1,45 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تطبيق بث الجوكر</title>
+    <title>مشغل القنوات التجريبي</title>
     <style>
         body { background: #0b141a; color: white; text-align: center; font-family: sans-serif; margin: 0; }
-        .header { background: #1c2128; padding: 15px; border-bottom: 3px solid #238636; font-weight: bold; }
-        .player-wrap { position: sticky; top: 0; background: #000; width: 100%; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .player-box { position: sticky; top: 0; background: #000; width: 100%; z-index: 100; }
         video { width: 100%; aspect-ratio: 16/9; background: #000; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding: 20px; }
-        button { background: #238636; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; }
-        button:active { background: #2ea043; transform: scale(0.95); }
-        .test-btn { background: #007bff; } /* لون مختلف لقناة الاختبار */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; padding: 20px; }
+        button { background: #238636; color: white; border: none; padding: 15px 5px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        button:hover { background: #2ea043; }
+        .info { padding: 10px; font-size: 13px; color: #aaa; }
     </style>
 </head>
 <body>
 
-<div class="player-wrap">
+<div class="player-box">
     <video id="video" controls playsinline autoplay></video>
 </div>
 
-<div class="header">📺 قائمة قنواتك (الجوكر)</div>
+<div class="info">إذا لم تعمل القنوات على الحاسوب، جرب فتح الموقع من الهاتف.</div>
 
 <div class="grid">
-    <button class="test-btn" onclick="play('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8')">اختبار التشغيل</button>
-    
-    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/1.m3u8')">beIN 1</button>
-    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/2.m3u8')">beIN 2</button>
-    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/3.m3u8')">beIN 3</button>
-    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/4.m3u8')">beIN 4</button>
-    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/10.m3u8')">SSC 1</button>
-    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/11.m3u8')">SSC 2</button>
-    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/12.m3u8')">SSC 3</button>
+    <button style="background: #007bff;" onclick="play('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8')">📢 اختبار المشغل</button>
+
+    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/1.m3u8')">beIN Sports 1</button>
+    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/2.m3u8')">beIN Sports 2</button>
+    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/10.m3u8')">SSC Sport 1</button>
+    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/11.m3u8')">SSC Sport 2</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
     var video = document.getElementById('video');
-    var hls = new Hls();
+    var hls = new Hls({
+        // هذا الجزء لمحاولة تخطي حماية السيرفر
+        xhrSetup: function (xhr, url) {
+            xhr.withCredentials = false;
+        }
+    });
 
     function play(url) {
         if (Hls.isSupported()) {
