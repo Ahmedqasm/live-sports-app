@@ -1,44 +1,40 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشغل القنوات المطور</title>
+    <title>Live TV Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body { background: #0b141a; color: white; text-align: center; font-family: sans-serif; margin: 0; }
-        .player-box { position: sticky; top: 0; background: #000; width: 100%; z-index: 100; }
-        video { width: 100%; aspect-ratio: 16/9; background: #000; border-bottom: 2px solid #238636; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; max-width: 500px; margin: 0 auto; }
-        button { background: #238636; color: white; border: none; padding: 20px 10px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 4px #1a6328; }
-        button:active { box-shadow: 0 2px #1a6328; transform: translateY(2px); }
-        .test-btn { background: #444; grid-column: span 2; padding: 10px; font-size: 12px; }
+        body { background: #000; color: #fff; text-align: center; font-family: sans-serif; margin: 0; }
+        .video-container { width: 100%; max-width: 800px; margin: auto; position: sticky; top: 0; background: #000; }
+        video { width: 100%; aspect-ratio: 16/9; box-shadow: 0 0 20px rgba(0,255,0,0.2); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; padding: 20px; }
+        button { background: #1a1a1a; color: #00ff00; border: 1px solid #00ff00; padding: 15px 5px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #00ff00; color: #000; }
     </style>
 </head>
 <body>
 
-<div class="player-box">
-    <video id="video" controls playsinline autoplay></video>
+<div class="video-container">
+    <video id="video" controls playsinline></video>
 </div>
+
+<h3>قنوات IPTV Editor</h3>
 
 <div class="grid">
-    <button class="test-btn" onclick="play('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8')">تحقق من المشغل (قناة تجريبية)</button>
-
-    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/1.m3u8')">القناة الأولى 📺</button>
-    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/2.m3u8')">القناة الثانية 📺</button>
+    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/1.m3u8')">القناة 1</button>
+    <button onclick="play('http://xapi-ie.org:8080/joker10/joker1995/2.m3u8')">القناة 2</button>
 </div>
 
-<p style="color: #888; font-size: 12px; padding: 10px;">إذا استمر التحميل، اضغط على زر "القناة" ثم اضغط مرتين على شاشة الفيديو.</p>
-
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
     var video = document.getElementById('video');
     var hls = new Hls();
 
     function play(url) {
-        // إذا كانت القناة من سيرفر الجوكر، نحاول تخطي الحماية
-        if (url.includes('xapi-ie.org')) {
-            // إضافة "بروكيس" بسيط لفك الحماية (اختياري حسب المتصفح)
-            console.log("محاولة تشغيل قناة الجوكر...");
+        // فحص إذا كان الرابط يعمل بـ HTTP والموقع بـ HTTPS
+        if (location.protocol === 'https:' && url.startsWith('http:')) {
+            alert("تنبيه: أنت تحاول تشغيل رابط HTTP على موقع آمن. إذا لم يشتغل البث، يرجى فتح الموقع باستخدام http بدلاً من https");
         }
 
         if (Hls.isSupported()) {
@@ -47,9 +43,6 @@
             hls.on(Hls.Events.MANIFEST_PARSED, function() {
                 video.play();
             });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = url;
-            video.play();
         }
     }
 </script>
