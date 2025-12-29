@@ -3,91 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشغل القنوات الاحترافي</title>
+    <title>تطبيق البث المباشر</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        :root { --main: #238636; --bg: #0d1117; }
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; text-align: center; }
-        .video-box { position: sticky; top: 0; z-index: 1000; background: #000; border-bottom: 3px solid var(--main); }
-        video { width: 100%; aspect-ratio: 16/9; max-width: 800px; background: #000; }
+        body { background: #0d1117; color: white; font-family: sans-serif; margin: 0; text-align: center; }
+        .video-fixed { position: sticky; top: 0; z-index: 1000; background: #000; width: 100%; border-bottom: 3px solid #238636; }
+        video { width: 100%; aspect-ratio: 16/9; max-width: 800px; }
         #list { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; padding: 20px; }
         .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 10px; cursor: pointer; }
         .card img { width: 50px; height: 50px; object-fit: contain; }
-        .name { font-size: 11px; margin-top: 5px; height: 30px; overflow: hidden; font-weight: bold; }
-        .status-box { padding: 40px; }
-        .btn-retry { background: var(--main); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        .name { font-size: 11px; margin-top: 5px; height: 30px; overflow: hidden; }
     </style>
 </head>
 <body>
 
-<div class="video-box">
+<div class="video-fixed">
     <video id="player" controls playsinline autoplay></video>
 </div>
 
-<div id="list" class="status-box">
-    <div id="msg">جاري محاولة الاتصال بالسيرفر...</div>
-    <button class="btn-retry" onclick="location.reload()">تحديث الصفحة</button>
-</div>
+<div id="list">جاري التحميل عبر بوابة بديلة...</div>
 
 <script>
-    const CONFIG = { host: "http://xapi-ie.org:8080", user: "TEST10", pass: "test10" };
-    const API = `${CONFIG.host}/player_api.php?username=${CONFIG.user}&password=${CONFIG.pass}&action=get_live_streams`;
-    
-    // قائمة بوسطاء مختلفين لتجربتهم
-    const PROXIES = [
-        "https://api.allorigins.win/raw?url=",
-        "https://corsproxy.io/?",
-        "https://thingproxy.freeboard.io/fetch/"
-    ];
+    // هذا الوسيط يعمل كخادم خارجي يجلب البيانات لك بعيداً عن قيود متصفحك
+    const PROXY_SERVER = "https://api.codetabs.com/v1/proxy?quest=";
+    const M3U_URL = "https://opop.pro/pPYvJtasmwHcsU/?channels=false";
 
-    let currentProxyIndex = 0;
-
-    async function tryFetch() {
-        if (currentProxyIndex >= PROXIES.length) {
-            document.getElementById('msg').innerHTML = "تعذر الاتصال بكافة الطرق. <br> 1. تأكد أن إضافة CORS لونها برتقالي. <br> 2. اضغط زر التحديث.";
-            return;
-        }
-
+    async function load() {
         try {
-            const url = PROXIES[currentProxyIndex] + encodeURIComponent(API);
-            const response = await fetch(url);
-            const data = await response.json();
-            // AllOrigins يرجع البيانات في contents أحياناً
-            const channels = data.contents ? JSON.parse(data.contents) : data;
-            render(channels);
-        } catch (e) {
-            console.log("فشل الوسيط رقم " + currentProxyIndex);
-            currentProxyIndex++;
-            tryFetch(); // تجربة الوسيط التالي
-        }
-    }
+            const response = await fetch(PROXY_SERVER + encodeURIComponent(M3U_URL));
+            const data = await response.text();
+            
+            const lines = data.split('\n');
+            const listDiv = document.getElementById('list');
+            listDiv.innerHTML = '';
 
-    function render(channels) {
-        const listDiv = document.getElementById('list');
-        listDiv.innerHTML = '';
-        channels.forEach(ch => {
-            let card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `<img src="${ch.stream_icon}" onerror="this.src='https://via.placeholder.com/50'"><div class="name">${ch.name}</div>`;
-            card.onclick = () => play(ch.stream_id);
-            listDiv.appendChild(card);
-        });
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].includes('#EXTINF:')) {
+                    const name = lines[i].split(',')[1] || "قناة";
+                    const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "";
+                    const url = lines[i+1]?.trim();
+
+                    if(url && url.startsWith('http')) {
+                        let card = document.createElement('div');
+                        card.className = 'card';
+                        card.innerHTML = `<img src="${logo}"><div class="name">${name}</div>`;
+                        card.onclick = () => play(url);
+                        listDiv.appendChild(card);
+                    }
+                }
+            }
+        } catch (e) {
+            document.getElementById('list').innerHTML = "فشل نهائي. يبدو أن السيرفر محمي ضد المتصفحات.";
+        }
     }
 
     const video = document.getElementById('player');
     const hls = new Hls();
 
-    function play(id) {
-        const streamUrl = `${CONFIG.host}/live/${CONFIG.user}/${CONFIG.pass}/${id}.m3u8`;
+    function play(url) {
+        // تشغيل البث المباشر
         if (Hls.isSupported()) {
-            hls.loadSource(streamUrl);
+            hls.loadSource(url);
             hls.attachMedia(video);
             video.play();
         }
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
-    tryFetch();
+    load();
 </script>
 </body>
 </html>
