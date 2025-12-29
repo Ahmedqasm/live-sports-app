@@ -1,74 +1,58 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشغل القنوات المباشر</title>
+    <title>IPTV Player Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-        .container { width: 95%; max-width: 900px; text-align: center; }
-        video { width: 100%; border: 2px solid #238636; border-radius: 10px; background: #000; box-shadow: 0 0 20px rgba(35, 134, 54, 0.3); }
-        .info { margin-top: 20px; background: #161b22; padding: 15px; border-radius: 8px; border: 1px solid #30363d; }
-        h2 { color: #2ea043; margin-bottom: 5px; }
-        p { color: #8b949e; font-size: 14px; }
-        .status { color: #f1e05a; font-weight: bold; margin-top: 10px; }
+        body { background: #000; color: #0f0; font-family: monospace; display: flex; flex-direction: column; align-items: center; padding-top: 50px; }
+        video { width: 90%; max-width: 800px; border: 2px solid #333; box-shadow: 0 0 20px #222; }
+        .box { margin-top: 20px; padding: 15px; border: 1px solid #333; width: 80%; text-align: center; }
+        .error-msg { color: #ff4444; display: none; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>مشغل البث المباشر</h2>
-    <p>بث مباشر عبر الرابط الخاص بك</p>
+    <h3>نظام تشغيل البث المباشر (تجاوز القيود)</h3>
+    <video id="video" controls autoplay></video>
     
-    <video id="video" controls autoplay playsinline></video>
-
-    <div class="info">
-        <div id="channel-name">قناة الجوكر المباشرة</div>
-        <div id="status" class="status">جاري الاتصال بالسيرفر...</div>
+    <div class="box">
+        <div id="status">جاري محاكاة اتصال VLC...</div>
+        <div id="error" class="error-msg">فشل الاتصال: السيرفر يرفض الطلبات من المتصفحات.</div>
     </div>
-</div>
 
 <script>
-    // الرابط الذي يعمل في VLC (قمنا بإضافته داخل وسيط لفك الحظر)
-    const rawUrl = "http://6d.tanres.us:80/play/live.php?mac=00:1A:79:BE:57:AB&stream=1178453&extension=m3u8&play_token=2ctTZQeSkL";
+    // الرابط الخاص بك
+    const originalUrl = "http://6d.tanres.us:80/play/live.php?mac=00:1A:79:BE:57:AB&stream=1178453&extension=m3u8&play_token=2ctTZQeSkL";
     
-    // استخدام وسيط لتخطي حماية المتصفح (CORS Proxy)
-    const finalStreamUrl = "https://corsproxy.io/?" + encodeURIComponent(rawUrl);
+    // استخدام بروكسي "AllOrigins" لجلب البث كبيانات خام لتخطي حظر السيرفر للمتصفحات
+    const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(originalUrl);
 
     const video = document.getElementById('video');
-    const status = document.getElementById('status');
-
+    
     if (Hls.isSupported()) {
         const hls = new Hls({
-            enableWorker: true,
-            lowLatencyMode: true
+            xhrSetup: function(xhr, url) {
+                // محاكاة هوية VLC أو جهاز MAG
+                xhr.setRequestHeader('User-Agent', 'VLC/3.0.12 LibVLC/3.0.12');
+            }
         });
-
-        hls.loadSource(finalStreamUrl);
+        
+        hls.loadSource(proxyUrl);
         hls.attachMedia(video);
-
+        
         hls.on(Hls.Events.MANIFEST_PARSED, function() {
-            status.innerText = "✅ متصل وجاري البث...";
+            document.getElementById('status').innerText = "✅ تم كسر الحماية.. البث يعمل الآن";
             video.play();
         });
 
         hls.on(Hls.Events.ERROR, function(event, data) {
             if (data.fatal) {
-                status.innerText = "❌ فشل التشغيل.. تأكد من تفعيل إضافة CORS في المتصفح.";
-                console.error("HLS Error:", data);
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('status').innerText = "❌ فشل";
             }
         });
-    } 
-    else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        // دعم متصفح Safari
-        video.src = finalStreamUrl;
-        video.play();
     }
-
-    // محاولة التشغيل التلقائي إذا منعها المتصفح
-    document.body.onclick = () => video.play();
 </script>
-
 </body>
 </html>
