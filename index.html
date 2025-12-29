@@ -3,97 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة الجوكر الاحترافية</title>
+    <title>تطبيق البث المباشر الذكي</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        :root { --main-color: #238636; --bg-color: #0d1117; }
-        body { background: var(--bg-color); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; overflow-x: hidden; }
-        .video-fixed { position: sticky; top: 0; z-index: 1000; background: #000; width: 100%; box-shadow: 0 5px 15px rgba(0,0,0,0.8); }
-        video { width: 100%; aspect-ratio: 16/9; }
-        .search-bar { padding: 15px; background: #161b22; }
-        input { width: 90%; padding: 12px; border-radius: 25px; border: none; background: #0d1117; color: white; border: 1px solid #30363d; outline: none; }
-        #channel-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; padding: 20px; }
-        .card { background: #161b22; border-radius: 12px; padding: 10px; cursor: pointer; border: 1px solid #30363d; transition: 0.3s; text-align: center; }
-        .card:hover { border-color: var(--main-color); transform: translateY(-5px); }
-        .card img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 8px; border-radius: 5px; background: #21262d; }
-        .card div { font-size: 12px; font-weight: bold; height: 35px; overflow: hidden; }
-        .category-tag { font-size: 10px; color: var(--main-color); display: block; margin-bottom: 5px; }
+        :root { --accent: #238636; --bg: #0d1117; }
+        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; text-align: center; }
+        .video-box { position: sticky; top: 0; z-index: 1000; background: #000; width: 100%; box-shadow: 0 4px 10px #000; }
+        video { width: 100%; aspect-ratio: 16/9; background: #000; }
+        .search-container { padding: 15px; background: #161b22; }
+        input { width: 90%; padding: 12px; border-radius: 20px; border: 1px solid #30363d; background: #0d1117; color: white; outline: none; }
+        #list { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; padding: 20px; }
+        .channel-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 10px; cursor: pointer; transition: 0.2s; }
+        .channel-card:hover { border-color: var(--accent); background: #1c2128; }
+        .channel-card img { width: 50px; height: 50px; object-fit: contain; margin-bottom: 5px; border-radius: 5px; }
+        .channel-name { font-size: 11px; font-weight: bold; height: 30px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .loading { padding: 50px; color: var(--accent); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="video-fixed">
-    <video id="main-video" controls playsinline autoplay></video>
+<div class="video-box">
+    <video id="player" controls playsinline autoplay></video>
 </div>
 
-<div class="search-bar">
-    <input type="text" id="search" placeholder="🔍 ابحث عن قناة أو باقة..." oninput="filter()">
+<div class="search-container">
+    <input type="text" id="search" placeholder="🔍 ابحث عن قناة..." oninput="filterChannels()">
 </div>
 
-<div id="channel-list">جاري مزامنة القنوات من اللوحة...</div>
+<div id="list" class="loading">جاري جلب القنوات من اللوحة...</div>
 
 <script>
-    // ضع رابط الـ M3U الخاص بك هنا
-    const M3U_URL = 'https://xapi-ie.org/get.php?username=TEST10&password=test10&type=m3u_plus';
-    let channels = [];
+    // الرابط الذي طلبته جاهز ومدمج
+    const PLAYLIST_URL = 'https://xapi-ie.org/get.php?username=TEST10&password=test10&type=m3u_plus';
+    let channelsData = [];
 
-    async function fetchData() {
+    // سحب البيانات من IPTV Editor
+    async function load() {
         try {
-            const response = await fetch(M3U_URL);
+            const response = await fetch(PLAYLIST_URL);
             const text = await response.text();
-            parseM3U(text);
+            parse(text);
         } catch (e) {
-            document.getElementById('channel-list').innerHTML = "خطأ في الاتصال. تأكد من تفعيل CORS.";
+            document.getElementById('list').innerHTML = "يرجى تفعيل إضافة CORS في المتصفح لتشغيل قنوات اللوحة.";
         }
     }
 
-    function parseM3U(data) {
+    function parse(data) {
         const lines = data.split('\n');
         for (let i = 0; i < lines.length; i++) {
             if (lines[i].includes('#EXTINF:')) {
-                const info = lines[i];
+                const name = lines[i].split(',')[1] || "قناة";
+                const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "https://via.placeholder.com/50?text=TV";
                 const url = lines[i + 1]?.trim();
-                
-                // استخراج الاسم والشعار والمجموعة (مثل سكريبت البايثون)
-                const name = info.split(',')[1]?.trim() || "قناة غير معروفة";
-                const logo = info.match(/tvg-logo="([^"]+)"/)?.[1] || "https://via.placeholder.com/60?text=TV";
-                const group = info.match(/group-title="([^"]+)"/)?.[1] || "عام";
-
                 if (url && url.startsWith('http')) {
-                    channels.push({ name, url, logo, group });
+                    channelsData.push({ name, url, logo });
                 }
             }
         }
-        render(channels);
+        render(channelsData);
     }
 
-    function render(list) {
-        const container = document.getElementById('channel-list');
-        container.innerHTML = list.map(ch => `
-            <div class="card" onclick="play('${ch.url}')">
-                <span class="category-tag">${ch.group}</span>
-                <img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/60?text=TV'">
-                <div>${ch.name}</div>
+    function render(arr) {
+        const container = document.getElementById('list');
+        container.classList.remove('loading');
+        container.innerHTML = arr.map(ch => `
+            <div class="channel-card" onclick="playStream('${ch.url}')">
+                <img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/50?text=TV'">
+                <div class="channel-name">${ch.name}</div>
             </div>
         `).join('');
     }
 
-    function filter() {
-        const q = document.getElementById('search').value.toLowerCase();
-        render(channels.filter(c => c.name.toLowerCase().includes(q) || c.group.toLowerCase().includes(q)));
+    function filterChannels() {
+        const query = document.getElementById('search').value.toLowerCase();
+        render(channelsData.filter(c => c.name.toLowerCase().includes(query)));
     }
 
-    const video = document.getElementById('main-video');
+    const video = document.getElementById('player');
     const hls = new Hls();
-    function play(url) {
+
+    function playStream(url) {
         if (Hls.isSupported()) {
-            hls.loadSource(url); hls.attachMedia(video);
+            hls.loadSource(url);
+            hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
         }
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
-    fetchData();
+    load();
 </script>
 </body>
 </html>
