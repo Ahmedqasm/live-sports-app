@@ -3,74 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تطبيق البث المباشر</title>
+    <title>مشغل IPTV الذكي</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body { background: #0d1117; color: white; font-family: sans-serif; margin: 0; text-align: center; }
-        .video-fixed { position: sticky; top: 0; z-index: 1000; background: #000; width: 100%; border-bottom: 3px solid #238636; }
+        :root { --primary: #2ea043; --bg: #0d1117; --card: #161b22; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; text-align: center; }
+        .video-box { position: sticky; top: 0; z-index: 1000; background: #000; border-bottom: 2px solid var(--primary); }
         video { width: 100%; aspect-ratio: 16/9; max-width: 800px; }
-        #list { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; padding: 20px; }
-        .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 10px; cursor: pointer; }
-        .card img { width: 50px; height: 50px; object-fit: contain; }
-        .name { font-size: 11px; margin-top: 5px; height: 30px; overflow: hidden; }
+        #list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; padding: 20px; }
+        .card { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 12px; cursor: pointer; transition: 0.2s; }
+        .card:hover { border-color: var(--primary); transform: translateY(-5px); background: #1c2128; }
+        .card img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 10px; }
+        .name { font-size: 12px; font-weight: bold; line-height: 1.4; height: 34px; overflow: hidden; }
+        .loading { padding: 100px; font-size: 20px; color: var(--primary); }
     </style>
 </head>
 <body>
 
-<div class="video-fixed">
+<div class="video-box">
     <video id="player" controls playsinline autoplay></video>
 </div>
 
-<div id="list">جاري التحميل عبر بوابة بديلة...</div>
+<div id="list" class="loading">جاري تحميل القنوات من الرابط الجديد...</div>
 
 <script>
-    // هذا الوسيط يعمل كخادم خارجي يجلب البيانات لك بعيداً عن قيود متصفحك
-    const PROXY_SERVER = "https://api.codetabs.com/v1/proxy?quest=";
-    const M3U_URL = "https://opop.pro/pPYvJtasmwHcsU/?channels=false";
+    // الرابط الذي قبلته اللوحة
+    const M3U_URL = 'https://xapi-ie.org/get.php?username=TEST10&password=test10&type=m3u_plus';
 
-    async function load() {
+    async function loadChannels() {
+        const listDiv = document.getElementById('list');
         try {
-            const response = await fetch(PROXY_SERVER + encodeURIComponent(M3U_URL));
+            // جلب البيانات مباشرة لأن الرابط أصبح https
+            const response = await fetch(M3U_URL);
+            if (!response.ok) throw new Error("Network error");
             const data = await response.text();
             
-            const lines = data.split('\n');
-            const listDiv = document.getElementById('list');
-            listDiv.innerHTML = '';
+            parseM3U(data);
+        } catch (e) {
+            // إذا فشل الجلب المباشر، نستخدم الوسيط كخطة بديلة فورية
+            try {
+                const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(M3U_URL);
+                const response = await fetch(proxyUrl);
+                const data = await response.text();
+                parseM3U(data);
+            } catch (err) {
+                listDiv.innerHTML = "تعذر جلب البيانات. تأكد من تفعيل إضافة CORS وتحديث الصفحة.";
+            }
+        }
+    }
 
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].includes('#EXTINF:')) {
-                    const name = lines[i].split(',')[1] || "قناة";
-                    const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "";
-                    const url = lines[i+1]?.trim();
+    function parseM3U(data) {
+        const listDiv = document.getElementById('list');
+        listDiv.innerHTML = '';
+        listDiv.classList.remove('loading');
 
-                    if(url && url.startsWith('http')) {
-                        let card = document.createElement('div');
-                        card.className = 'card';
-                        card.innerHTML = `<img src="${logo}"><div class="name">${name}</div>`;
-                        card.onclick = () => play(url);
-                        listDiv.appendChild(card);
-                    }
+        const lines = data.split('\n');
+        lines.forEach((line, i) => {
+            if (line.includes('#EXTINF:')) {
+                const name = line.split(',')[1] || "قناة غير معروفة";
+                const logo = line.match(/tvg-logo="([^"]+)"/)?.[1] || "https://via.placeholder.com/60?text=TV";
+                const url = lines[i + 1]?.trim();
+
+                if (url && url.startsWith('http')) {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `<img src="${logo}"><div class="name">${name}</div>`;
+                    card.onclick = () => play(url);
+                    listDiv.appendChild(card);
                 }
             }
-        } catch (e) {
-            document.getElementById('list').innerHTML = "فشل نهائي. يبدو أن السيرفر محمي ضد المتصفحات.";
-        }
+        });
     }
 
     const video = document.getElementById('player');
     const hls = new Hls();
 
     function play(url) {
-        // تشغيل البث المباشر
+        // تنظيف الرابط من أي مسافات
+        const streamUrl = url.trim();
+        
         if (Hls.isSupported()) {
-            hls.loadSource(url);
+            hls.loadSource(streamUrl);
             hls.attachMedia(video);
+            video.play().catch(e => console.log("Auto-play blocked"));
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = streamUrl;
             video.play();
         }
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
-    load();
+    loadChannels();
 </script>
 </body>
 </html>
