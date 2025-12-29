@@ -3,48 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تطبيق البث المباشر الذكي</title>
+    <title>تطبيق البث الاحترافي</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        :root { --accent: #238636; --bg: #0d1117; }
+        :root { --main: #238636; --bg: #0d1117; }
         body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; text-align: center; }
-        .video-box { position: sticky; top: 0; z-index: 1000; background: #000; width: 100%; box-shadow: 0 4px 10px #000; }
+        .video-fixed { position: sticky; top: 0; z-index: 1000; background: #000; width: 100%; box-shadow: 0 4px 15px #000; }
         video { width: 100%; aspect-ratio: 16/9; background: #000; }
-        .search-container { padding: 15px; background: #161b22; }
+        .search-area { padding: 15px; background: #161b22; }
         input { width: 90%; padding: 12px; border-radius: 20px; border: 1px solid #30363d; background: #0d1117; color: white; outline: none; }
-        #list { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; padding: 20px; }
-        .channel-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 10px; cursor: pointer; transition: 0.2s; }
-        .channel-card:hover { border-color: var(--accent); background: #1c2128; }
-        .channel-card img { width: 50px; height: 50px; object-fit: contain; margin-bottom: 5px; border-radius: 5px; }
-        .channel-name { font-size: 11px; font-weight: bold; height: 30px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .loading { padding: 50px; color: var(--accent); font-weight: bold; }
+        #list { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; padding: 15px; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 10px; cursor: pointer; transition: 0.2s; }
+        .card:hover { border-color: var(--main); background: #1c2128; }
+        .card img { width: 45px; height: 45px; object-fit: contain; margin-bottom: 5px; }
+        .name { font-size: 10px; font-weight: bold; height: 25px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .status { padding: 20px; color: var(--main); font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div class="video-box">
+<div class="video-fixed">
     <video id="player" controls playsinline autoplay></video>
 </div>
 
-<div class="search-container">
-    <input type="text" id="search" placeholder="🔍 ابحث عن قناة..." oninput="filterChannels()">
+<div class="search-area">
+    <input type="text" id="search" placeholder="🔍 ابحث عن قناة..." oninput="filter()">
 </div>
 
-<div id="list" class="loading">جاري جلب القنوات من اللوحة...</div>
+<div id="list" class="status">جاري جلب القنوات من اللوحة...</div>
 
 <script>
-    // الرابط الذي طلبته جاهز ومدمج
-    const PLAYLIST_URL = 'https://xapi-ie.org/get.php?username=TEST10&password=test10&type=m3u_plus';
-    let channelsData = [];
+    // الرابط والوسيط
+    const PROXY = "https://cors-anywhere.herokuapp.com/"; // هذا وسيط لفك الحماية
+    const M3U_URL = 'https://xapi-ie.org/get.php?username=TEST10&password=test10&type=m3u_plus';
+    
+    let allChannels = [];
 
-    // سحب البيانات من IPTV Editor
-    async function load() {
+    async function loadChannels() {
         try {
-            const response = await fetch(PLAYLIST_URL);
+            // نحاول جلب القنوات عبر الوسيط لتجنب الرفض
+            const response = await fetch(PROXY + M3U_URL);
             const text = await response.text();
             parse(text);
         } catch (e) {
-            document.getElementById('list').innerHTML = "يرجى تفعيل إضافة CORS في المتصفح لتشغيل قنوات اللوحة.";
+            // إذا فشل الوسيط، نحاول الجلب المباشر
+            const response = await fetch(M3U_URL);
+            const text = await response.text();
+            parse(text);
         }
     }
 
@@ -53,45 +58,54 @@
         for (let i = 0; i < lines.length; i++) {
             if (lines[i].includes('#EXTINF:')) {
                 const name = lines[i].split(',')[1] || "قناة";
-                const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "https://via.placeholder.com/50?text=TV";
+                const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "https://via.placeholder.com/50";
                 const url = lines[i + 1]?.trim();
                 if (url && url.startsWith('http')) {
-                    channelsData.push({ name, url, logo });
+                    allChannels.push({ name, url, logo });
                 }
             }
         }
-        render(channelsData);
+        render(allChannels);
     }
 
-    function render(arr) {
-        const container = document.getElementById('list');
-        container.classList.remove('loading');
-        container.innerHTML = arr.map(ch => `
-            <div class="channel-card" onclick="playStream('${ch.url}')">
-                <img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/50?text=TV'">
-                <div class="channel-name">${ch.name}</div>
+    function render(data) {
+        const listDiv = document.getElementById('list');
+        listDiv.innerHTML = data.map(ch => `
+            <div class="card" onclick="playStream('${ch.url}')">
+                <img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/50'">
+                <div class="name">${ch.name}</div>
             </div>
         `).join('');
+        if(data.length > 0) listDiv.classList.remove('status');
     }
 
-    function filterChannels() {
-        const query = document.getElementById('search').value.toLowerCase();
-        render(channelsData.filter(c => c.name.toLowerCase().includes(query)));
+    function filter() {
+        const q = document.getElementById('search').value.toLowerCase();
+        render(allChannels.filter(c => c.name.toLowerCase().includes(q)));
     }
 
     const video = document.getElementById('player');
     const hls = new Hls();
 
     function playStream(url) {
+        // نقوم بتشغيل القناة مباشرة، وإذا فشلت نستخدم الوسيط
         if (Hls.isSupported()) {
             hls.loadSource(url);
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            
+            hls.on(Hls.Events.ERROR, function (event, data) {
+                if (data.fatal) {
+                    console.log("فشل التشغيل المباشر، نجرب عبر الوسيط...");
+                    hls.loadSource(PROXY + url);
+                    hls.attachMedia(video);
+                }
+            });
         }
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
-    load();
+    loadChannels();
 </script>
 </body>
 </html>
